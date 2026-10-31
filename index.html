@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Trend and Rainfall Analysis | Indian Cities Meteorological Analytics</title>
+  <meta name="description" content="Comprehensive meteorological data analytics dashboard analyzing historical weather, rainfall patterns, temperature trends, and live 7-day forecasts for Mumbai, Delhi, Bengaluru, Kolkata, and Chennai using official Open-Meteo APIs.">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Chart.js (with local vendor fallback) -->
+  <script src="js/vendor/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <!-- Brand Logo & Title -->
+      <a href="#" class="brand-section">
+        <div class="brand-icon-box">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"></path>
+          </svg>
+        </div>
+        <div class="brand-title-wrap">
+          <h1>Weather Trend & Rainfall Analysis</h1>
+          <p>Indian Meteorological Analytics & Live Observation</p>
+        </div>
+      </a>
+
+      <!-- Quick City Selection Tabs (Strictly Indian Cities Only) -->
+      <nav class="city-tabs-nav" aria-label="City Navigation">
+        <button type="button" class="city-tab-btn active" data-city="mumbai">Mumbai</button>
+        <button type="button" class="city-tab-btn" data-city="delhi">Delhi</button>
+        <button type="button" class="city-tab-btn" data-city="bengaluru">Bengaluru</button>
+        <button type="button" class="city-tab-btn" data-city="kolkata">Kolkata</button>
+        <button type="button" class="city-tab-btn" data-city="chennai">Chennai</button>
+      </nav>
+
+      <!-- Header Actions: Live Status & Dark/Light Mode Toggle -->
+      <div class="header-actions">
+        <div id="live-status-pill" class="live-pill">
+          <span class="pulse-dot"></span>
+          <span>Live API Ready</span>
+        </div>
+
+        <!-- Dark Mode / Light Mode Toggle Button -->
+        <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Dark/Light Mode" aria-label="Toggle theme">
+          <span id="theme-toggle-icon" class="theme-icon-wrap">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+            </svg>
+          </span>
+          <span id="theme-toggle-label">Dark Mode</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Global Loading Overlay -->
+    <div id="global-loader" style="display: none; align-items: center; justify-content: center; padding: 2rem; gap: 0.75rem; color: var(--primary-500); font-weight: 600;">
+      <span class="pulse-dot"></span> Loading genuine meteorological dataset from Open-Meteo...
+    </div>
+
+    <!-- Global Error Banner -->
+    <div id="global-error-banner" class="alert-box alert-error" style="display: none; margin-bottom: 1rem;"></div>
+
+    <!-- Custom Uploaded Dataset Banner -->
+    <div id="custom-dataset-banner" class="city-hero-banner" style="display: none; background: rgba(5, 150, 105, 0.1); border-color: rgba(5, 150, 105, 0.3);">
+      <div>
+        <h3 style="color: var(--accent-green); font-size: 1.1rem; font-weight: 700;">Custom User Weather Dataset Active</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Currently analyzing user-uploaded data file: <strong id="custom-dataset-name">dataset.csv</strong></p>
+      </div>
+      <button type="button" class="btn-secondary" onclick="location.reload();">Restore Official Indian Cities Dataset</button>
+    </div>
+
+    <!-- Active City Hero Overview -->
+    <section class="city-hero-banner">
+      <div class="city-hero-info">
+        <h2>
+          <span class="active-city-name">Mumbai</span>
+          <span class="badge-region active-city-badge">West Coast</span>
+        </h2>
+        <p><span class="active-city-state">Maharashtra</span> • <span class="active-city-tagline">Commercial Capital & Arabian Sea Coastal Zone</span></p>
+        <p class="city-hero-coords active-city-coords">19.0760° N, 72.8777° E (Elev. 14m)</p>
+      </div>
+      <div class="city-hero-meta">
+        <button id="btn-refresh-live" class="btn-secondary" title="Fetch fresh live observations from Open-Meteo">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Refresh Live Data
+        </button>
+      </div>
+    </section>
+
+    <!-- Top 4 Summary KPI Cards -->
+    <section class="summary-grid" aria-label="Summary Weather Statistics">
+      <!-- 1. Average Temperature -->
+      <article class="summary-card">
+        <div class="card-top">
+          <span class="card-label">Average Temperature</span>
+          <div class="card-icon-badge badge-temp">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"></path>
+            </svg>
+          </div>
+        </div>
+        <div id="card-avg-temp" class="card-value">-- °C</div>
+        <div id="card-temp-range-sub" class="card-subtext">Min: --°C | Max: --°C</div>
+      </article>
+
+      <!-- 2. Total Rainfall -->
+      <article class="summary-card">
+        <div class="card-top">
+          <span class="card-label">Total Rainfall</span>
+          <div class="card-icon-badge badge-rain">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"></path>
+            </svg>
+          </div>
+        </div>
+        <div id="card-total-rain" class="card-value">-- mm</div>
+        <div id="card-total-rain-sub" class="card-subtext">Avg -- mm/day (4-Year Period)</div>
+      </article>
+
+      <!-- 3. Highest Single-Day Rainfall -->
+      <article class="summary-card">
+        <div class="card-top">
+          <span class="card-label">Highest 24h Rainfall</span>
+          <div class="card-icon-badge badge-record">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+        </div>
+        <div id="card-highest-rain" class="card-value">-- mm</div>
+        <div id="card-highest-rain-sub" class="card-subtext">Peak deluge event</div>
+      </article>
+
+      <!-- 4. Rainy Days -->
+      <article class="summary-card">
+        <div class="card-top">
+          <span class="card-label">Rainy Days</span>
+          <div class="card-icon-badge badge-days">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+        </div>
+        <div id="card-rainy-days" class="card-value">-- Days</div>
+        <div id="card-rainy-days-sub" class="card-subtext">Precipitation >= 1.0 mm</div>
+      </article>
+    </section>
+
+    <!-- Real-Time Live Weather & Genuine 7-Day Forecast -->
+    <section id="live-weather-card" class="live-weather-card">
+      <div class="live-weather-header">
+        <div class="live-title-group">
+          <h3>
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            Current Weather & 7-Day Forecast (<span class="active-city-name">Mumbai</span>)
+          </h3>
+          <span class="live-subtitle">Live high-resolution telemetry from official Open-Meteo API</span>
+        </div>
+        <span id="live-updated-time" class="text-muted" style="font-size: 0.8rem;">Updated: Just now</span>
+      </div>
+
+      <div class="live-overview-layout">
+        <!-- Live Current Temperature & Metrics -->
+        <div class="live-now-box">
+          <div id="live-temp" class="live-temp-display">--°C</div>
+          <div id="live-condition" class="live-condition-label">Loading observation...</div>
+          <div id="live-feels-like" class="live-feels-sub">Feels like --°C</div>
+
+          <div class="live-metrics-strip">
+            <div class="live-metric-item">
+              <span class="m-lbl">Humidity</span>
+              <span id="live-humidity" class="m-val">--%</span>
+            </div>
+            <div class="live-metric-item">
+              <span class="m-lbl">Rainfall</span>
+              <span id="live-rainfall" class="m-val">-- mm</span>
+            </div>
+            <div class="live-metric-item">
+              <span class="m-lbl">Wind</span>
+              <span id="live-wind" class="m-val">-- km/h</span>
+            </div>
+            <div class="live-metric-item">
+              <span class="m-lbl">Pressure</span>
+              <span id="live-pressure" class="m-val">-- hPa</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7-Day Forecast Grid -->
+        <div class="forecast-strip-wrap">
+          <h4>Official 7-Day Atmospheric Forecast</h4>
+          <div id="live-forecast-strip" class="forecast-days-grid">
+            <!-- Dynamically populated 7 days -->
+            <div class="forecast-day-card"><span class="text-muted">Loading 7-day forecast...</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Filters & Data Controls Bar -->
+    <section class="controls-card" aria-label="Dashboard Filters">
+      <div class="controls-header">
+        <h3>
+          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+          </svg>
+          Dataset Filters & Analytics Controls
+        </h3>
+        <div class="controls-actions">
+          <button id="btn-reset-filters" class="btn-outline" title="Reset all filters to defaults">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            Reset Filters
+          </button>
+          
+          <!-- CSV Upload -->
+          <label for="csv-file-input" class="btn-outline" style="cursor: pointer;" title="Upload custom weather CSV dataset">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+            </svg>
+            Upload Custom CSV
+          </label>
+          <input type="file" id="csv-file-input" class="file-input-hidden" accept=".csv">
+
+          <!-- CSV Download -->
+          <button id="btn-download-csv" class="btn-primary" title="Export currently filtered dataset as CSV">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Download CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls Form Inputs Grid -->
+      <div class="controls-grid">
+        <!-- City Filter (Strictly 5 Indian Cities) -->
+        <div class="form-group">
+          <label for="filter-city">Indian City</label>
+          <select id="filter-city" class="form-control">
+            <option value="mumbai">Mumbai (Maharashtra)</option>
+            <option value="delhi">Delhi (NCT)</option>
+            <option value="bengaluru">Bengaluru (Karnataka)</option>
+            <option value="kolkata">Kolkata (West Bengal)</option>
+            <option value="chennai">Chennai (Tamil Nadu)</option>
+          </select>
+        </div>
+
+        <!-- Year Filter -->
+        <div class="form-group">
+          <label for="filter-year">Year</label>
+          <select id="filter-year" class="form-control">
+            <option value="all">All Years (2022 - 2025)</option>
+            <option value="2025">Year 2025</option>
+            <option value="2024">Year 2024</option>
+            <option value="2023">Year 2023</option>
+            <option value="2022">Year 2022</option>
+          </select>
+        </div>
+
+        <!-- Season Filter -->
+        <div class="form-group">
+          <label for="filter-season">IMD Season</label>
+          <select id="filter-season" class="form-control">
+            <option value="all">All Seasons</option>
+            <option value="Winter">Winter (Jan - Feb)</option>
+            <option value="Summer">Summer (Mar - May)</option>
+            <option value="Monsoon">Monsoon (Jun - Sep)</option>
+            <option value="Post-Monsoon">Post-Monsoon (Oct - Dec)</option>
+          </select>
+        </div>
+
+        <!-- Month Filter -->
+        <div class="form-group">
+          <label for="filter-month">Specific Month</label>
+          <select id="filter-month" class="form-control">
+            <option value="all">All Months</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+
+        <!-- Start Date -->
+        <div class="form-group">
+          <label for="filter-start-date">Start Date</label>
+          <input type="date" id="filter-start-date" class="form-control" min="2022-01-01" max="2025-12-31">
+        </div>
+
+        <!-- End Date -->
+        <div class="form-group">
+          <label for="filter-end-date">End Date</label>
+          <input type="date" id="filter-end-date" class="form-control" min="2022-01-01" max="2025-12-31">
+        </div>
+      </div>
+
+      <!-- Upload Feedback Banner -->
+      <div id="csv-upload-feedback" class="alert-box"></div>
+    </section>
+
+    <!-- Interactive Data Visualizations Grid (6 Chart.js Visualizations) -->
+    <section class="charts-grid" aria-label="Interactive Weather Charts">
+      <!-- 1. Temperature Trends Over Time (Line Chart) -->
+      <div class="chart-card full-width">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Temperature Trends Over Time (<span class="active-city-name">Mumbai</span>)</h3>
+          <p class="chart-subtitle">Daily maximum, mean, and minimum temperatures (°C) showing seasonal cycles and thermal swings</p>
+        </div>
+        <div class="chart-canvas-wrap tall">
+          <canvas id="chart-temp-trend"></canvas>
+        </div>
+      </div>
+
+      <!-- 2. Monthly Rainfall Pattern (Bar Chart) -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Monthly Rainfall & Rainy Days</h3>
+          <p class="chart-subtitle">Aggregated monthly precipitation totals (mm) and rainy day count</p>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart-monthly-rain"></canvas>
+        </div>
+      </div>
+
+      <!-- 3. Year-over-Year Rainfall Comparison (Bar Chart) -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Year-over-Year Precipitation Comparison</h3>
+          <p class="chart-subtitle">Annual cumulative rainfall comparison across 2022, 2023, 2024, and 2025</p>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart-yearly-compare"></canvas>
+        </div>
+      </div>
+
+      <!-- 4. Seasonal Rainfall Distribution (Doughnut Chart) -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Seasonal Rainfall Distribution</h3>
+          <p class="chart-subtitle">Proportion of annual rainfall across Indian seasons (Winter, Summer, Monsoon, Post-Monsoon)</p>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart-seasonal-donut"></canvas>
+        </div>
+      </div>
+
+      <!-- 5. Temperature vs Rainfall Relationship (Scatter Plot) -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Temperature vs Rainfall Relationship</h3>
+          <p class="chart-subtitle">Scatter correlation between daily mean temperature (°C) and daily precipitation (mm)</p>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart-scatter-plot"></canvas>
+        </div>
+      </div>
+
+      <!-- 6. City-Wise Comparison (Mumbai, Delhi, Bengaluru, Kolkata, Chennai) -->
+      <div class="chart-card full-width">
+        <div class="chart-card-header">
+          <h3 class="chart-title">Comparative Meteorological Analysis Across 5 Indian Metros</h3>
+          <p class="chart-subtitle">Side-by-side benchmarking of annual precipitation (mm) and rainy days per year (Mumbai, Delhi, Bengaluru, Kolkata, Chennai)</p>
+        </div>
+        <div class="chart-canvas-wrap tall">
+          <canvas id="chart-city-compare"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data Analytics & Weather Insights Section -->
+    <section class="insights-section" aria-label="Dynamic Weather Insights">
+      <div class="section-header">
+        <h3>
+          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+          </svg>
+          Meteorological Insights & Key Findings (<span class="active-city-name">Mumbai</span>)
+        </h3>
+      </div>
+      <div id="insights-container" class="insights-grid">
+        <!-- Dynamically synthesized insights -->
+        <div class="insight-card"><p class="text-muted">Computing genuine analytical insights from observation records...</p></div>
+      </div>
+    </section>
+
+    <!-- Weather Data Analysis Table (Searchable & Sortable) -->
+    <section class="table-section-card" aria-label="Weather Records Table">
+      <div class="section-header">
+        <h3>
+          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          Weather Data Analysis Table
+        </h3>
+      </div>
+
+      <!-- Table Controls: Search & Page Size -->
+      <div class="table-controls-bar">
+        <div class="search-box-wrap">
+          <span class="search-icon">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </span>
+          <input type="text" id="table-search" class="form-control" placeholder="Search by date, city, season, temp...">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <label for="table-page-size" style="font-size: 0.85rem; color: var(--text-muted);">Rows per page:</label>
+          <select id="table-page-size" class="form-control" style="width: 85px;">
+            <option value="15" selected>15</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="table-responsive">
+        <table class="weather-data-table">
+          <thead>
+            <tr>
+              <th data-sort="date">Date <span class="sort-icon">▼</span></th>
+              <th data-sort="city">City <span class="sort-icon">↕</span></th>
+              <th data-sort="min_temp">Min Temp (°C) <span class="sort-icon">↕</span></th>
+              <th data-sort="max_temp">Max Temp (°C) <span class="sort-icon">↕</span></th>
+              <th data-sort="avg_temp">Avg Temp (°C) <span class="sort-icon">↕</span></th>
+              <th data-sort="humidity">Humidity (%) <span class="sort-icon">↕</span></th>
+              <th data-sort="rainfall">Rainfall (mm) <span class="sort-icon">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="weather-table-body">
+            <tr>
+              <td colspan="7" class="text-center py-8 text-muted">Loading weather records...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Pagination Footer -->
+      <div class="table-footer">
+        <span id="table-count-info" style="font-size: 0.85rem; color: var(--text-muted);">Showing 0 of 0 records</span>
+        <div class="table-pagination-nav">
+          <button id="table-prev-page" class="btn-outline" disabled>Previous</button>
+          <span id="table-page-info" style="font-size: 0.85rem; font-weight: 600; padding: 0 0.5rem;">Page 1 of 1</span>
+          <button id="table-next-page" class="btn-outline">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Methodology, Data Sources & Conclusion Section -->
+    <section class="doc-section" aria-label="Project Methodology and Sources">
+      <!-- Methodology -->
+      <article class="doc-card">
+        <h3>
+          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Project Methodology
+        </h3>
+        <p>This analytics project employs an end-to-end meteorological data processing pipeline:</p>
+        <ul>
+          <li><strong>Data Ingestion:</strong> Historical daily records (2022–2025) are retrieved via the official Open-Meteo Archive REST API utilizing ECMWF ERA5 reanalysis modeling at 0.25° spatial resolution.</li>
+          <li><strong>Real-Time Integration:</strong> High-resolution 7-day numerical weather predictions and live current observations are retrieved via the Open-Meteo Forecast API.</li>
+          <li><strong>Seasonal Classification:</strong> Aligned with official India Meteorological Department (IMD) standards: Winter (Jan–Feb), Summer / Pre-Monsoon (Mar–May), Monsoon (Jun–Sep), and Post-Monsoon (Oct–Dec).</li>
+          <li><strong>Statistical Calculations:</strong> Pearson correlation coefficient (<em>r</em>), year-over-year percentage variances, diurnal thermal amplitudes, and threshold-based precipitation metrics (rainy day >= 1.0 mm).</li>
+        </ul>
+      </article>
+
+      <!-- Data Source & Limitations -->
+      <article class="doc-card">
+        <h3>
+          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Data Sources & Limitations
+        </h3>
+        <p><strong>Primary Data Sources:</strong></p>
+        <ul>
+          <li><a href="https://archive-api.open-meteo.com/v1/archive" target="_blank" rel="noopener">Open-Meteo Historical Archive API</a> – ERA5 atmospheric reanalysis archive (ECMWF).</li>
+          <li><a href="https://api.open-meteo.com/v1/forecast" target="_blank" rel="noopener">Open-Meteo Forecast API</a> – Multi-model ensemble (GFS, DWD ICON, ECMWF).</li>
+        </ul>
+        <p><strong>Dataset Scope & Limitations:</strong></p>
+        <ul>
+          <li><strong>Geographic Scope:</strong> Exclusively calibrated for five Indian metropolitan centers: Mumbai, Delhi, Bengaluru, Kolkata, and Chennai.</li>
+          <li><strong>Microclimate Variances:</strong> Reanalysis grid coordinates represent regional station centroids and may not capture localized urban heat islands or hyper-local orographic cloudbursts.</li>
+        </ul>
+      </article>
+    </section>
+
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>&copy; 2026 Weather Trend and Rainfall Analysis Dashboard. Powered by official Open-Meteo APIs.</p>
+      <p>Indian Metros: Mumbai • Delhi • Bengaluru • Kolkata • Chennai</p>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       AI Weather Chatbot Floating Widget
+       ========================================================================== -->
+  <!-- Floating Action Button -->
+  <button id="chatbot-toggle-btn" class="chatbot-toggle-btn" title="Open Weather AI Assistant" aria-label="Open Weather AI Chatbot">
+    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+    </svg>
+    <span class="chatbot-badge-dot"></span>
+  </button>
+
+  <!-- Chatbot Window -->
+  <div id="chatbot-window" class="chatbot-window" role="dialog" aria-modal="true" aria-label="Weather AI Assistant">
+    <!-- Chat Header -->
+    <div class="chat-header">
+      <div class="chat-title-group">
+        <div class="chat-avatar-icon">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <h4>Weather AI Assistant</h4>
+          <span class="chat-status-sub">Online • Indian Cities Live Intelligence</span>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <button id="chat-close-btn" title="Close Chat" aria-label="Close Chat">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Message Stream -->
+    <div id="chat-messages" class="chat-messages">
+      <!-- Welcome Message -->
+      <div class="chat-bubble bot-bubble">
+        <p>👋 Hello! I am your <strong>Weather AI Assistant</strong>.</p>
+        <p style="margin-top: 0.35rem;">I provide answers and comparisons powered by genuine historical records and live forecasts for <strong>Mumbai, Delhi, Bengaluru, Kolkata, and Chennai</strong>.</p>
+        <p style="margin-top: 0.35rem; font-size: 0.8rem; color: var(--text-muted);">Ask me about rainfall totals, live forecasts, hottest days, or compare weather between two cities!</p>
+      </div>
+    </div>
+
+    <!-- Quick Question Chips -->
+    <div id="chat-quick-prompts" class="chat-quick-prompts-wrap">
+      <!-- Populated dynamically by chatbot.js -->
+    </div>
+
+    <!-- Chat Input Form -->
+    <div class="chat-input-bar">
+      <input type="text" id="chat-input" placeholder="Ask about temperature, rainfall, forecasts..." aria-label="Chat input">
+      <button type="button" id="chat-send-btn" class="chat-send-btn" title="Send Question" aria-label="Send message">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript Modules in Dependency Order -->
+  <script src="js/api.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/table.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

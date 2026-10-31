@@ -1,0 +1,24 @@
+{
+  "name": "weather-trend-rainfall-analysis",
+  "version": "1.0.0",
+  "description": "Weather Trend and Rainfall Analysis - Professional Data Analytics Dashboard for Indian Cities (Mumbai, Delhi, Bengaluru, Kolkata, Chennai)",
+  "main": "server.py",
+  "scripts": {
+    "start": "python server.py",
+    "dev": "python server.py",
+    "serve": "python server.py",
+    "test": "python test_dashboard.py",
+    "fetch": "python fetch_data.py"
+  },
+  "keywords": [
+    "weather-analysis",
+    "rainfall-trends",
+    "open-meteo",
+    "data-analytics",
+    "chartjs",
+    "indian-cities",
+    "meteorology"
+  ],
+  "author": "Data Analytics Team",
+  "license": "MIT"
+}
