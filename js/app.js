@@ -20,6 +20,7 @@ const App = (() => {
     },
     liveWeatherData: null,
     cityComparisons: null,
+    rainfallRanking: [],
     isCustomDataLoaded: false
   };
 
@@ -133,7 +134,8 @@ const App = (() => {
       monthly: monthly,
       yearly: yearly,
       seasonal: seasonal,
-      cityComparisons: state.cityComparisons
+      cityComparisons: state.cityComparisons,
+      rainfallRanking: state.rainfallRanking
     });
   }
 
@@ -287,13 +289,6 @@ const App = (() => {
   function applyFilters() {
     let list = [...state.allRecords];
 
-    // City filter
-    if (state.filters.city && state.filters.city !== "all") {
-      const targetCity = WeatherAPI.getCity(state.filters.city);
-      const targetName = targetCity ? targetCity.name.toLowerCase() : state.filters.city.toLowerCase();
-      list = list.filter((r) => r.city.toLowerCase() === targetName);
-    }
-
     // Year filter
     if (state.filters.year && state.filters.year !== "all") {
       const y = parseInt(state.filters.year, 10);
@@ -302,7 +297,7 @@ const App = (() => {
 
     // Season filter
     if (state.filters.season && state.filters.season !== "all") {
-      list = list.filter((r) => r.season.toLowerCase() === state.filters.season.toLowerCase());
+      list = list.filter((r) => String(r.season || "").toLowerCase() === state.filters.season.toLowerCase());
     }
 
     // Month filter
@@ -319,16 +314,23 @@ const App = (() => {
       list = list.filter((r) => r.date <= state.filters.endDate);
     }
 
+    const cityComparisonRecords = list;
+    if (state.filters.city && state.filters.city !== "all") {
+      const targetCity = WeatherAPI.getCity(state.filters.city);
+      const targetName = targetCity ? targetCity.name.toLowerCase() : state.filters.city.toLowerCase();
+      list = list.filter((r) => String(r.city || "").toLowerCase() === targetName);
+    }
+
     state.filteredRecords = list;
 
     // Update Summary KPI Cards
     updateSummaryCards(list);
 
     // Update Visualizations
-    updateVisualizations(list);
+    updateVisualizations(list, cityComparisonRecords);
 
     // Update Insights
-    updateInsights(list);
+    updateInsights(list, cityComparisonRecords);
 
     // Update Table
     WeatherTable.setRecords(list);
@@ -404,48 +406,128 @@ const App = (() => {
   }
 
   /**
-   * Render all 6 Chart.js charts
+   * Render all 7 Chart.js charts
    */
-  function updateVisualizations(records) {
+  function updateVisualizations(records, cityComparisonRecords = records) {
     const isDark = state.isDarkTheme;
     const monthly = WeatherAnalytics.aggregateMonthly(records);
     const yearly = WeatherAnalytics.aggregateYearly(records);
     const seasonal = WeatherAnalytics.aggregateSeasonal(records);
+    state.rainfallRanking = WeatherAnalytics.getCityRainfallRanking(cityComparisonRecords);
 
     WeatherCharts.renderTemperatureTrend(records, isDark);
     WeatherCharts.renderMonthlyRainfall(monthly, isDark);
     WeatherCharts.renderYearlyComparison(yearly, isDark);
     WeatherCharts.renderSeasonalDonut(seasonal, isDark);
     WeatherCharts.renderScatterPlot(records, isDark);
+    WeatherCharts.renderRainfallRanking(state.rainfallRanking, isDark);
+    updateRainfallRankingTable(state.rainfallRanking);
+    updateMonthlyRainfallHeatmap(cityComparisonRecords);
 
     if (state.cityComparisons) {
       WeatherCharts.renderCityComparison(state.cityComparisons, isDark);
     }
   }
 
+  function updateRainfallRankingTable(ranking) {
+    const tableBody = document.getElementById("rainfall-ranking-table-body");
+    if (!tableBody) return;
+
+    let rank = 0;
+    tableBody.innerHTML = ranking.map((city) => `
+      <tr>
+        <td>${city.totalRainfall === null ? "--" : ++rank}</td>
+        <th scope="row">${city.name}</th>
+        <td>${city.totalRainfall === null ? "No data" : `${city.totalRainfall.toLocaleString()} mm`}</td>
+        <td>${city.totalRainfall === null ? "--" : city.rainyDays.toLocaleString()}</td>
+      </tr>
+    `).join("");
+  }
+
+  function updateMonthlyRainfallHeatmap(records) {
+    const tableBody = document.getElementById("monthly-rainfall-heatmap-body");
+    if (!tableBody) return;
+
+    const rows = WeatherAnalytics.getMonthlyRainfallByCity(records);
+    const validValues = rows.flatMap((row) => row.months
+      .filter((month) => month.totalRainfall !== null)
+      .map((month) => month.totalRainfall));
+    const maxRainfall = validValues.length ? Math.max(...validValues) : null;
+
+    tableBody.innerHTML = rows.map((row) => `
+      <tr>
+        <th scope="row">${row.city}</th>
+        ${row.months.map((month) => {
+          if (month.totalRainfall === null) {
+            return `<td class="rainfall-heatmap-cell heatmap-missing" aria-label="${row.city}, ${WeatherAnalytics.MONTH_NAMES[month.month - 1]}: no data">--</td>`;
+          }
+          const intensity = month.totalRainfall === 0 || !maxRainfall
+            ? 0
+            : Math.min(5, Math.ceil((month.totalRainfall / maxRainfall) * 5));
+          const value = month.totalRainfall.toLocaleString();
+          return `<td class="rainfall-heatmap-cell heatmap-intensity-${intensity}" aria-label="${row.city}, ${WeatherAnalytics.MONTH_NAMES[month.month - 1]}: ${value} millimeters across ${month.observationCount} days" title="${value} mm across ${month.observationCount} days">${value}</td>`;
+        }).join("")}
+      </tr>
+    `).join("");
+
+    const legend = document.getElementById("monthly-rainfall-heatmap-legend");
+    if (legend) {
+      legend.querySelectorAll(".heatmap-legend-step span").forEach((label, index) => {
+        label.textContent = maxRainfall === null
+          ? "--"
+          : index === 0 || maxRainfall === 0
+            ? "0"
+            : `${Math.round((maxRainfall * index / 5) * 10) / 10}`;
+      });
+    }
+  }
+
   /**
    * Render Meteorological Insights Section
    */
-  function updateInsights(records) {
+  function updateInsights(records, cityComparisonRecords = records) {
     const container = document.getElementById("insights-container");
-    if (!container) return;
-
     const cityMeta = WeatherAPI.getCity(state.activeCityId);
     const cityName = cityMeta ? cityMeta.name : "Selected Region";
-    const insights = WeatherAnalytics.generateInsights(records, cityName);
+    const insights = records.length
+      ? WeatherAnalytics.generateInsights(records, cityName)
+      : [{ title: "No weather observations", category: "rainfall", text: "No records match the selected filters." }];
 
-    container.innerHTML = insights
-      .map(
-        (ins) => `
-        <div class="insight-card insight-${ins.category}">
-          <div class="insight-header">
-            <h4 class="insight-title">${ins.title}</h4>
+    if (container) {
+      container.innerHTML = insights
+        .map(
+          (ins) => `
+          <div class="insight-card insight-${ins.category}">
+            <div class="insight-header">
+              <h4 class="insight-title">${ins.title}</h4>
+            </div>
+            <p class="insight-text">${ins.text}</p>
           </div>
-          <p class="insight-text">${ins.text}</p>
-        </div>
-      `
-      )
-      .join("");
+        `
+        )
+        .join("");
+    }
+
+    updateSmartInsightCards(records, cityComparisonRecords);
+  }
+
+  function updateSmartInsightCards(records, cityComparisonRecords) {
+    const insights = WeatherAnalytics.getSmartInsights(records, cityComparisonRecords);
+    const setText = (id, value) => {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
+    };
+
+    setText("smart-wettest-month", insights.wettestMonth ? insights.wettestMonth.monthName : "No data");
+    setText("smart-wettest-rainfall", insights.wettestMonth ? `${insights.wettestMonth.totalRainfall.toLocaleString()} mm rainfall` : "No valid rainfall records");
+    setText("smart-driest-month", insights.driestMonth ? insights.driestMonth.monthName : "No data");
+    setText("smart-driest-rainfall", insights.driestMonth ? `${insights.driestMonth.totalRainfall.toLocaleString()} mm rainfall` : "No valid rainfall records");
+    setText("smart-highest-city", insights.highestRainfallCity ? insights.highestRainfallCity.name : "No data");
+    setText("smart-highest-city-rainfall", insights.highestRainfallCity ? `${insights.highestRainfallCity.totalRainfall.toLocaleString()} mm rainfall` : "No valid rainfall records");
+    setText("smart-lowest-city", insights.lowestRainfallCity ? insights.lowestRainfallCity.name : "No data");
+    setText("smart-lowest-city-rainfall", insights.lowestRainfallCity ? `${insights.lowestRainfallCity.totalRainfall.toLocaleString()} mm rainfall` : "No valid rainfall records");
+    setText("smart-rainy-days", insights.rainyDays.toLocaleString());
+    setText("smart-average-temperature", insights.averageTemperature === null ? "No data" : `${insights.averageTemperature} °C`);
   }
 
   function getInsightIconSvg(iconName) {

@@ -289,6 +289,8 @@ body {
    ========================================================================== */
 main {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   padding: 1.75rem 0 3rem;
   display: flex;
   flex-direction: column;
@@ -751,9 +753,11 @@ body.dark-theme .badge-region {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .chart-card {
+  min-width: 0;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -790,11 +794,159 @@ body.dark-theme .badge-region {
 .chart-canvas-wrap {
   position: relative;
   width: 100%;
+  min-width: 0;
   height: 330px;
 }
 
 .chart-canvas-wrap.tall {
   height: 360px;
+}
+
+.rainfall-ranking-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.chart-canvas-wrap.rainfall-ranking-chart {
+  height: 270px;
+}
+
+.rainfall-ranking-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.rainfall-ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.rainfall-ranking-table th,
+.rainfall-ranking-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.rainfall-ranking-table thead th {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.rainfall-ranking-table tbody th {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.rainfall-ranking-table tbody tr:first-child th,
+.rainfall-ranking-table tbody tr:first-child td {
+  color: var(--primary-500);
+  font-weight: 700;
+}
+
+.rainfall-heatmap-card {
+  gap: 1rem;
+}
+
+.rainfall-heatmap-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.rainfall-heatmap-table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: separate;
+  border-spacing: 3px;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.rainfall-heatmap-table th,
+.rainfall-heatmap-table td {
+  padding: 0.55rem 0.45rem;
+}
+
+.rainfall-heatmap-table thead th {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.rainfall-heatmap-table tbody th {
+  min-width: 100px;
+  color: var(--text-primary);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.rainfall-heatmap-cell {
+  min-width: 68px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.heatmap-intensity-0 { background-color: #f1f5f9; color: #475569; }
+.heatmap-intensity-1 { background-color: #dbeafe; color: #1e3a8a; }
+.heatmap-intensity-2 { background-color: #93c5fd; color: #172554; }
+.heatmap-intensity-3 { background-color: #3b82f6; color: #ffffff; }
+.heatmap-intensity-4 { background-color: #1d4ed8; color: #ffffff; }
+.heatmap-intensity-5 { background-color: #1e3a8a; color: #ffffff; }
+.heatmap-missing { background-color: var(--bg-secondary); color: var(--text-muted); }
+
+body.dark-theme .heatmap-intensity-0 { background-color: #1e293b; color: #cbd5e1; }
+body.dark-theme .heatmap-intensity-1 { background-color: #164e63; color: #e0f2fe; }
+body.dark-theme .heatmap-intensity-2 { background-color: #075985; color: #f0f9ff; }
+body.dark-theme .heatmap-intensity-3 { background-color: #0369a1; color: #ffffff; }
+body.dark-theme .heatmap-intensity-4 { background-color: #0284c7; color: #ffffff; }
+body.dark-theme .heatmap-intensity-5 { background-color: #38bdf8; color: #082f49; }
+
+.rainfall-heatmap-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.rainfall-heatmap-legend-title {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.rainfall-heatmap-legend-scale {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.heatmap-legend-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.heatmap-swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
 }
 
 /* ==========================================================================
@@ -820,6 +972,57 @@ body.dark-theme .badge-region {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.smart-insights-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.smart-insights-section .section-header {
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.smart-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 1rem;
+}
+
+.smart-insight-card {
+  min-width: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  border-top: 3px solid var(--primary-500);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.smart-insight-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.smart-insight-value {
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.smart-insight-detail {
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
 .insights-grid {
@@ -1452,6 +1655,9 @@ body.dark-theme .quick-chip:hover {
     grid-template-columns: 1fr;
   }
   .live-overview-layout {
+    grid-template-columns: 1fr;
+  }
+  .rainfall-ranking-layout {
     grid-template-columns: 1fr;
   }
   .live-now-box {

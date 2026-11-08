@@ -145,8 +145,43 @@ def test_theme_and_ui_elements():
     assert 'id="chart-seasonal-donut"' in html
     assert 'id="chart-scatter-plot"' in html
     assert 'id="chart-city-compare"' in html
+    assert 'id="chart-rainfall-ranking"' in html
 
-    print("  [PASS] Dark/Light Mode toggle, all 5 city tabs, chatbot widget, and all 6 chart canvases verified.")
+    print("  [PASS] Dark/Light Mode toggle, all 5 city tabs, chatbot widget, and all 7 chart canvases verified.")
+
+def test_smart_insights_and_rainfall_views():
+    print("\n--- Test 6: Verifying Smart Insights, Rainfall Ranking & Heatmap ---")
+    with open("index.html", "r", encoding="utf-8") as f:
+        html = f.read()
+    with open("js/analytics.js", "r", encoding="utf-8") as f:
+        analytics = f.read()
+    with open("js/charts.js", "r", encoding="utf-8") as f:
+        charts = f.read()
+    with open("js/app.js", "r", encoding="utf-8") as f:
+        app = f.read()
+
+    for element_id in [
+        "smart-wettest-month",
+        "smart-driest-month",
+        "smart-highest-city",
+        "smart-lowest-city",
+        "smart-rainy-days",
+        "smart-average-temperature",
+        "chart-rainfall-ranking",
+        "rainfall-ranking-table-body",
+        "monthly-rainfall-heatmap-body",
+        "monthly-rainfall-heatmap-legend"
+    ]:
+        assert f'id="{element_id}"' in html, f"Missing dashboard element {element_id}"
+
+    assert "getSmartInsights" in analytics
+    assert "getCityRainfallRanking" in analytics
+    assert "getMonthlyRainfallByCity" in analytics
+    assert 'indexAxis: "y"' in charts, "Rainfall ranking chart must be horizontal"
+    assert "updateMonthlyRainfallHeatmap" in app
+    assert "cityComparisonRecords" in app, "Cross-city views must retain all cities while applying time filters"
+
+    print("  [PASS] Six smart insights, horizontal city ranking, ranking table, monthly heatmap, and filter wiring verified.")
 
 def main():
     print("================================================================")
@@ -157,6 +192,7 @@ def main():
     test_live_weather_and_forecasts()
     test_chatbot_engine()
     test_theme_and_ui_elements()
+    test_smart_insights_and_rainfall_views()
     print("\n>>> ALL TESTS PASSED SUCCESSFULLY! The dashboard is fully functional. <<<\n")
 
 if __name__ == "__main__":
