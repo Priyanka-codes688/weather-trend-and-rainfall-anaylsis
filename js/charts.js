@@ -1,6 +1,6 @@
 /**
  * Weather Trend and Rainfall Analysis - Chart.js Visualization Engine
- * Renders 6 interactive charts with Dark/Light theme adaptability, responsive layouts,
+ * Renders 7 interactive charts with Dark/Light theme adaptability, responsive layouts,
  * tooltips, zoom/reset capabilities, and smooth animated updates.
  */
 
@@ -12,7 +12,8 @@ const WeatherCharts = (() => {
     yearlyCompare: null,
     seasonalDonut: null,
     scatterPlot: null,
-    cityCompare: null
+    cityCompare: null,
+    rainfallRanking: null
   };
 
   /**
@@ -532,12 +533,77 @@ const WeatherCharts = (() => {
     });
   }
 
+  function renderRainfallRanking(ranking, isDark = false) {
+    destroyChart("rainfallRanking");
+    const canvas = document.getElementById("chart-rainfall-ranking");
+    if (!canvas) return;
+
+    const colors = getThemeColors(isDark);
+    const cities = Array.isArray(ranking) ? ranking : [];
+    const ctx = canvas.getContext("2d");
+    instances.rainfallRanking = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: cities.map((city) => city.name),
+        datasets: [{
+          label: "Total Rainfall (mm)",
+          data: cities.map((city) => city.totalRainfall),
+          backgroundColor: cities.map((_, index) =>
+            index === 0
+              ? (isDark ? "rgba(56, 189, 248, 0.9)" : "rgba(2, 132, 199, 0.9)")
+              : (isDark ? "rgba(56, 189, 248, 0.45)" : "rgba(2, 132, 199, 0.5)")
+          ),
+          borderColor: isDark ? "#38bdf8" : "#0284c7",
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: colors.tooltipBg,
+            titleColor: "#ffffff",
+            bodyColor: "#e2e8f0",
+            borderColor: colors.tooltipBorder,
+            borderWidth: 1,
+            callbacks: {
+              label: (context) => context.raw === null
+                ? "No rainfall data"
+                : `Total rainfall: ${Number(context.raw).toLocaleString()} mm`,
+              afterLabel: (context) => {
+                const city = cities[context.dataIndex];
+                return city.totalRainfall === null ? "" : `Rainy days: ${city.rainyDays}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            title: { display: true, text: "Total Rainfall (mm)", color: colors.textColor },
+            ticks: { color: colors.textColor, font: { size: 11 } },
+            grid: { color: colors.gridColor }
+          },
+          y: {
+            ticks: { color: colors.headingColor, font: { size: 12, weight: "600" } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+
   /**
    * Re-render all active charts when theme toggles
    */
   function updateTheme(isDark, state) {
     if (!state) return;
     if (state.records) renderTemperatureTrend(state.records, isDark);
+    if (state.rainfallRanking) renderRainfallRanking(state.rainfallRanking, isDark);
     if (state.monthly) renderMonthlyRainfall(state.monthly, isDark);
     if (state.yearly) renderYearlyComparison(state.yearly, isDark);
     if (state.seasonal) renderSeasonalDonut(state.seasonal, isDark);
@@ -552,6 +618,7 @@ const WeatherCharts = (() => {
     renderSeasonalDonut,
     renderScatterPlot,
     renderCityComparison,
+    renderRainfallRanking,
     updateTheme,
     destroyChart
   };

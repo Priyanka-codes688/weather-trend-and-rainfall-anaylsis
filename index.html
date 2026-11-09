@@ -322,7 +322,7 @@
       <div id="csv-upload-feedback" class="alert-box"></div>
     </section>
 
-    <!-- Interactive Data Visualizations Grid (6 Chart.js Visualizations) -->
+    <!-- Interactive Data Visualizations Grid (7 Chart.js Visualizations) -->
     <section class="charts-grid" aria-label="Interactive Weather Charts">
       <!-- 1. Temperature Trends Over Time (Line Chart) -->
       <div class="chart-card full-width">
@@ -388,6 +388,117 @@
         <div class="chart-canvas-wrap tall">
           <canvas id="chart-city-compare"></canvas>
         </div>
+      </div>
+
+      <!-- 7. City-Wise Total Rainfall Ranking -->
+      <div class="chart-card full-width">
+        <div class="chart-card-header">
+          <h3 class="chart-title">City-Wise Rainfall Ranking</h3>
+          <p class="chart-subtitle">Total rainfall from highest to lowest, with rainy days for the selected time period</p>
+        </div>
+        <div class="rainfall-ranking-layout">
+          <div class="chart-canvas-wrap rainfall-ranking-chart">
+            <canvas id="chart-rainfall-ranking" aria-label="Horizontal bar chart ranking five cities by total rainfall"></canvas>
+          </div>
+          <div class="rainfall-ranking-table-wrap">
+            <table class="rainfall-ranking-table">
+              <thead>
+                <tr>
+                  <th scope="col">Rank</th>
+                  <th scope="col">City</th>
+                  <th scope="col">Total Rainfall</th>
+                  <th scope="col">Rainy Days</th>
+                </tr>
+              </thead>
+              <tbody id="rainfall-ranking-table-body">
+                <tr><td colspan="4" class="text-muted">Loading city rainfall totals...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Monthly Rainfall Heatmap -->
+    <section class="chart-card rainfall-heatmap-card" aria-label="Monthly Rainfall Heatmap">
+      <div class="chart-card-header">
+        <h3 class="chart-title">Monthly Rainfall Heatmap</h3>
+        <p class="chart-subtitle">Total rainfall by city and calendar month for the selected time period</p>
+      </div>
+      <div class="rainfall-heatmap-scroll">
+        <table class="rainfall-heatmap-table">
+          <thead>
+            <tr>
+              <th scope="col">City</th>
+              <th scope="col">January</th>
+              <th scope="col">February</th>
+              <th scope="col">March</th>
+              <th scope="col">April</th>
+              <th scope="col">May</th>
+              <th scope="col">June</th>
+              <th scope="col">July</th>
+              <th scope="col">August</th>
+              <th scope="col">September</th>
+              <th scope="col">October</th>
+              <th scope="col">November</th>
+              <th scope="col">December</th>
+            </tr>
+          </thead>
+          <tbody id="monthly-rainfall-heatmap-body">
+            <tr><td colspan="13" class="text-muted">Loading monthly rainfall totals...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="rainfall-heatmap-legend" aria-label="Rainfall intensity legend">
+        <span class="rainfall-heatmap-legend-title">Rainfall (mm):</span>
+        <div id="monthly-rainfall-heatmap-legend" class="rainfall-heatmap-legend-scale">
+          <span class="heatmap-legend-step"><i class="heatmap-swatch heatmap-intensity-0"></i><span>0</span></span>
+          <span class="heatmap-legend-step"><i class="heatmap-swatch heatmap-intensity-1"></i><span>--</span></span>
+          <span class="heatmap-legend-step"><i class="heatmap-swatch heatmap-intensity-2"></i><span>--</span></span>
+          <span class="heatmap-legend-step"><i class="heatmap-swatch heatmap-intensity-3"></i><span>--</span></span>
+          <span class="heatmap-legend-step"><i class="heatmap-swatch heatmap-intensity-4"></i><span>--</span></span>
+          <span class="heatmap-legend-step"><i class="heatmap-swatch heatmap-intensity-5"></i><span>--</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Smart Weather Insights -->
+    <section class="smart-insights-section" aria-label="Smart Weather Insights">
+      <div class="section-header">
+        <h3>Smart Weather Insights</h3>
+        <p class="chart-subtitle">Month, rainy-day, and temperature cards follow the city filter; city comparisons include all five cities.</p>
+      </div>
+      <div id="smart-insights-container" class="smart-insights-grid" aria-live="polite">
+        <article class="smart-insight-card">
+          <span class="smart-insight-label">Wettest Month</span>
+          <strong id="smart-wettest-month" class="smart-insight-value">--</strong>
+          <span id="smart-wettest-rainfall" class="smart-insight-detail">Waiting for weather data</span>
+        </article>
+        <article class="smart-insight-card">
+          <span class="smart-insight-label">Driest Month</span>
+          <strong id="smart-driest-month" class="smart-insight-value">--</strong>
+          <span id="smart-driest-rainfall" class="smart-insight-detail">Waiting for weather data</span>
+        </article>
+        <article class="smart-insight-card">
+          <span class="smart-insight-label">Highest Rainfall City</span>
+          <strong id="smart-highest-city" class="smart-insight-value">--</strong>
+          <span id="smart-highest-city-rainfall" class="smart-insight-detail">Across available city records</span>
+        </article>
+        <article class="smart-insight-card">
+          <span class="smart-insight-label">Lowest Rainfall City</span>
+          <strong id="smart-lowest-city" class="smart-insight-value">--</strong>
+          <span id="smart-lowest-city-rainfall" class="smart-insight-detail">Across available city records</span>
+        </article>
+        <article class="smart-insight-card">
+          <span class="smart-insight-label">Total Rainy Days</span>
+          <strong id="smart-rainy-days" class="smart-insight-value">--</strong>
+          <span class="smart-insight-detail">Days with at least 1 mm rainfall</span>
+        </article>
+        <article class="smart-insight-card">
+          <span class="smart-insight-label">Average Temperature</span>
+          <strong id="smart-average-temperature" class="smart-insight-value">--</strong>
+          <span class="smart-insight-detail">Selected city and filtered period</span>
+        </article>
       </div>
     </section>
 

@@ -11,6 +11,11 @@ const WeatherAnalytics = (() => {
   ];
 
   const SEASONS = ["Winter", "Summer", "Monsoon", "Post-Monsoon"];
+  const CITY_NAMES = ["Mumbai", "Delhi", "Bengaluru", "Kolkata", "Chennai"];
+
+  function isValidNumber(value) {
+    return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
+  }
 
   /**
    * Calculate comprehensive summary statistics from a list of records
@@ -262,6 +267,92 @@ const WeatherAnalytics = (() => {
     return { wettest, driest };
   }
 
+  function getCityRainfallRanking(records) {
+    const totals = new Map(CITY_NAMES.map((name) => [name, { name, totalRainfall: 0, rainyDays: 0, observationCount: 0 }]));
+
+    (records || []).forEach((record) => {
+      if (!record || typeof record.city !== "string") return;
+      const name = CITY_NAMES.find((city) => city.toLowerCase() === record.city.trim().toLowerCase());
+      if (!isValidNumber(record.rainfall)) return;
+      const rain = Number(record.rainfall);
+      if (!name || rain < 0) return;
+
+      const city = totals.get(name);
+      if (!Number.isFinite(city.totalRainfall + rain)) return;
+      city.totalRainfall += rain;
+      city.observationCount++;
+      if (rain >= 1.0) city.rainyDays++;
+    });
+
+    return Array.from(totals.values())
+      .map((city) => ({
+        ...city,
+        totalRainfall: city.observationCount ? Math.round(city.totalRainfall * 10) / 10 : null
+      }))
+      .sort((a, b) => {
+        if (a.totalRainfall === null) return b.totalRainfall === null ? 0 : 1;
+        if (b.totalRainfall === null) return -1;
+        return b.totalRainfall - a.totalRainfall;
+      });
+  }
+
+  function getMonthlyRainfallByCity(records) {
+    const totals = new Map(CITY_NAMES.map((name) => [
+      name,
+      Array.from({ length: 12 }, (_, index) => ({ month: index + 1, totalRainfall: 0, observationCount: 0 }))
+    ]));
+
+    (records || []).forEach((record) => {
+      if (!record || typeof record.city !== "string") return;
+      const name = CITY_NAMES.find((city) => city.toLowerCase() === record.city.trim().toLowerCase());
+      if (!isValidNumber(record.rainfall) || !isValidNumber(record.month)) return;
+      const rain = Number(record.rainfall);
+      const month = Number(record.month);
+      if (!name || rain < 0 || !Number.isInteger(month) || month < 1 || month > 12) return;
+
+      const cell = totals.get(name)[month - 1];
+      if (!Number.isFinite(cell.totalRainfall + rain)) return;
+      cell.totalRainfall += rain;
+      cell.observationCount++;
+    });
+
+    return Array.from(totals, ([city, months]) => ({
+      city,
+      months: months.map((month) => ({
+        ...month,
+        totalRainfall: month.observationCount ? Math.round(month.totalRainfall * 10) / 10 : null
+      }))
+    }));
+  }
+
+  function getSmartInsights(records, cityComparisonRecords) {
+    const validRecords = (records || []).filter((record) => record && typeof record === "object");
+    const validTemperatures = validRecords
+      .filter((record) => isValidNumber(record.avg_temp))
+      .map((record) => Number(record.avg_temp));
+    const validRainfallRecords = validRecords.filter((record) =>
+      isValidNumber(record.rainfall) && Number(record.rainfall) >= 0
+    );
+    const monthly = aggregateMonthly(validRainfallRecords)
+      .filter((month) => month.count > 0);
+    const extremes = getExtremes(monthly);
+    const ranking = getCityRainfallRanking(cityComparisonRecords);
+    const citiesWithData = ranking.filter((city) => city.totalRainfall !== null);
+    const cityRainfallHigh = citiesWithData.length ? citiesWithData[0] : null;
+    const cityRainfallLow = citiesWithData.length ? citiesWithData[citiesWithData.length - 1] : null;
+
+    return {
+      wettestMonth: extremes.wettest,
+      driestMonth: extremes.driest,
+      highestRainfallCity: cityRainfallHigh,
+      lowestRainfallCity: cityRainfallLow,
+      rainyDays: validRainfallRecords.filter((record) => Number(record.rainfall) >= 1.0).length,
+      averageTemperature: validTemperatures.length
+        ? Math.round((validTemperatures.reduce((sum, temperature) => sum + temperature, 0) / validTemperatures.length) * 10) / 10
+        : null
+    };
+  }
+
   /**
    * Calculate Pearson correlation coefficient between temperature and rainfall
    */
@@ -401,6 +492,9 @@ const WeatherAnalytics = (() => {
     aggregateYearly,
     aggregateSeasonal,
     getExtremes,
+    getCityRainfallRanking,
+    getMonthlyRainfallByCity,
+    getSmartInsights,
     calculateTempRainCorrelation,
     generateInsights,
     compareAllCities

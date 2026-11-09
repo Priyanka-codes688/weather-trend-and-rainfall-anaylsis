@@ -40,9 +40,12 @@ An advanced, responsive, and production-ready **Data Analytics Web Application**
      - Post-Monsoon (Oct - Dec)
    - **Temperature vs Rainfall Relationship**: Scatter plot evaluating thermal precipitation correlations.
    - **Comparative Metro Benchmarking**: Multi-city comparison comparing annual rainfall and rainy days across all 5 Indian cities.
+   - **City-Wise Rainfall Ranking**: Horizontal bar chart and table ranked by total rainfall, including rainy-day counts.
+   - **Monthly Rainfall Heatmap**: City-by-month rainfall totals with a filter-aware intensity scale and legend.
 
 3. **Data Analytics & Meteorological Insights**
-   - Dynamic calculations of wettest/driest months, thermal amplitudes, and Pearson correlation coefficients ($r$).
+   - Smart insight cards for wettest/driest months, highest/lowest rainfall cities, rainy days, and average temperature.
+   - Dynamic calculations of thermal amplitudes and Pearson correlation coefficients ($r$).
    - Searchable and sortable data table with pagination controls.
    - CSV export functionality and custom CSV upload parser with strict schema validation.
 
@@ -137,6 +140,12 @@ or:
 ```
 http://127.0.0.1:8080
 ```
+
+### Verify the new rainfall features
+1. Select a city and adjust the year, season, month, or date range.
+2. The smart cards for wettest/driest month, rainy days, and average temperature follow the selected city and filters.
+3. The rainfall ranking and heatmap continue to show all five cities; they update for the selected time period, but intentionally ignore the single-city filter so the comparison remains useful.
+4. Switch between light and dark mode and confirm the ranking chart and heatmap remain readable. City ranking uses total rainfall; a rainy day is a day with at least `1.0 mm` of rainfall.
 
 ---
 
